@@ -147,3 +147,6 @@ else:
 
     app = ObesityClassificationApp(data_handler, model_handler)
     app.run()
+
+import sklearn
+st.write(f"Scikit-learn Version: {sklearn.__version__}")
