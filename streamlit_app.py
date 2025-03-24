@@ -61,14 +61,15 @@ class ObesityClassificationApp:
         features = {}
         for col in self.data_handler.data.columns:
             if col in self.data_handler.label_encoders:
-                selected_option = st.selectbox(f"{col}", self.data_handler.label_encoders[col].classes_)
-                features[col] = self.data_handler.label_encoders[col].transform([selected_option])[0]
+                categories = list(self.data_handler.label_encoders[col].classes_)
+                selected_category = st.selectbox(f"{col}", categories)
+                features[col] = self.data_handler.label_encoders[col].transform([selected_category])[0]
             else:
-                min_val = float(self.data_handler.data[col].min())
-                max_val = float(self.data_handler.data[col].max())
+                min_val, max_val = 0.0, 1.0
                 features[col] = st.slider(f"{col}", min_val, max_val, (min_val + max_val) / 2)
         
-        return pd.DataFrame([features])
+        user_df = pd.DataFrame([features])
+        return user_df
     
     def display_prediction(self, user_input):
         st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
