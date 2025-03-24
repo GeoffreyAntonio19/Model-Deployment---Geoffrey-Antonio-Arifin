@@ -11,7 +11,7 @@ import os
 class DataHandler:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.data_original = None  # Data asli (tanpa encoding/normalisasi)
+        self.data_original = None  # Data asli tanpa encoding/normalisasi
         self.data_processed = None  # Data setelah encoding & normalisasi
         self.label_encoders = {}
         self.scaler = MinMaxScaler()
@@ -26,7 +26,7 @@ class DataHandler:
         return self.data_original
     
     def preprocess_data(self):
-        """Melakukan encoding pada data kategorikal & normalisasi pada data numerik untuk keperluan prediksi"""
+        """Melakukan encoding kategori & normalisasi numerik untuk model"""
         self.data_processed = self.data_original.copy()
         
         # Encoding untuk data kategorikal (selain target)
@@ -39,12 +39,16 @@ class DataHandler:
         self.data_processed[self.numerical_cols] = self.scaler.fit_transform(self.data_original[self.numerical_cols])
 
     def transform_user_input(self, user_df):
-        """Mengubah input user ke bentuk yang bisa digunakan untuk prediksi (encoding & normalisasi)"""
+        """Mengubah input user ke format yang bisa digunakan untuk prediksi"""
         transformed_df = user_df.copy()
 
-        # Encoding kategori
+        # Encoding kategori dengan penanganan nilai tak dikenal
         for col in self.label_encoders:
-            transformed_df[col] = self.label_encoders[col].transform([user_df[col].values[0]])[0]
+            try:
+                transformed_df[col] = self.label_encoders[col].transform([user_df[col].values[0]])[0]
+            except ValueError:
+                st.warning(f"Nilai '{user_df[col].values[0]}' di {col} tidak dikenal. Gunakan kategori lain.")
+                return None
 
         # Normalisasi numerik
         transformed_df[self.numerical_cols] = self.scaler.transform(user_df[self.numerical_cols])
@@ -57,15 +61,15 @@ class ModelHandler:
         self.model = joblib.load(model_path)
     
     def predict(self, features):
-        """Pastikan input berbentuk array 2D sebelum dimasukkan ke model"""
+        """Melakukan prediksi dengan memastikan format input valid"""
         try:
-            # Pastikan tidak ada nilai NaN dalam data yang dikirim ke model
-            features = features.fillna(0)
+            if features is None:
+                return None, None  # Tidak bisa prediksi jika transformasi gagal
 
-            # Pastikan input berbentuk numpy array 2D
-            features = features.to_numpy().reshape(1, -1)
+            features = features.fillna(0)  # Isi NaN dengan 0
+            features = features.to_numpy().reshape(1, -1)  # Pastikan array 2D
 
-            # Prediksi probabilitas kelas
+            # Prediksi
             prediction_prob = self.model.predict_proba(features)[0]
             predicted_class = self.model.classes_[np.argmax(prediction_prob)]
             return predicted_class, prediction_prob
@@ -115,19 +119,27 @@ class ObesityClassificationApp:
     
     def display_prediction(self, user_input_original, user_input_transformed):
         st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
+
         predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
-        prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
-        st.write(prob_df)
-        st.write(f"### Prediksi Akhir: {predicted_class}")
-    
+
+        if predicted_class is not None:
+            prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
+            st.write(prob_df)
+            st.write(f"### Prediksi Akhir: {predicted_class}")
+        else:
+            st.error("Prediksi gagal. Pastikan input valid.")
+
     def run(self):
         st.title("Aplikasi Klasifikasi Obesitas dengan Streamlit")
         self.display_raw_data()
         self.display_visualization()
         user_input_original, user_input_transformed = self.user_input_features()
+
         st.subheader("5. Data yang Diinputkan User (Nilai Asli)")
         st.write(user_input_original)
-        self.display_prediction(user_input_original, user_input_transformed)
+
+        if user_input_transformed is not None:
+            self.display_prediction(user_input_original, user_input_transformed)
 
 # Main Program
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
