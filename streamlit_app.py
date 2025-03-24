@@ -162,10 +162,4 @@ else:
 
 import sklearn
 st.write(f"Scikit-learn Version: {sklearn.__version__}")
-
-import joblib
-import sklearn
-
-model = joblib.load("trained_model.pkl")
-print(f"Scikit-learn Model Version: {model.__module__}")
-print(f"Installed Scikit-learn Version: {sklearn.__version__}")
+st.write(f"Scikit-learn Model Version: {model.__module__}")
