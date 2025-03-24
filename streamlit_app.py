@@ -11,33 +11,45 @@ import os
 class DataHandler:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.data = None
+        self.data_original = None  # Data asli (tanpa encoding/normalisasi)
+        self.data_processed = None  # Data setelah encoding & normalisasi
         self.label_encoders = {}
         self.scaler = MinMaxScaler()
         self.categorical_cols = []
         self.numerical_cols = []
     
     def load_data(self):
-        self.data = pd.read_csv(self.file_path)
-        self.categorical_cols = self.data.select_dtypes(include=['object']).columns.tolist()
-        self.numerical_cols = self.data.select_dtypes(include=['int64', 'float64']).columns.tolist()
-        return self.data
+        """Memuat data asli tanpa perubahan"""
+        self.data_original = pd.read_csv(self.file_path)
+        self.categorical_cols = self.data_original.select_dtypes(include=['object']).columns.tolist()
+        self.numerical_cols = self.data_original.select_dtypes(include=['int64', 'float64']).columns.tolist()
+        return self.data_original
     
     def preprocess_data(self):
-        """ Menyiapkan encoder untuk kolom kategorikal dan scaler untuk numerik """
-        for col in self.categorical_cols:
-            if col != "NObeyesdad":  # Jangan ubah target
-                self.label_encoders[col] = LabelEncoder()
-                self.data[col] = self.label_encoders[col].fit_transform(self.data[col])
+        """Melakukan encoding pada data kategorikal & normalisasi pada data numerik untuk keperluan prediksi"""
+        self.data_processed = self.data_original.copy()
         
-        self.data[self.numerical_cols] = self.scaler.fit_transform(self.data[self.numerical_cols])
+        # Encoding untuk data kategorikal (selain target)
+        for col in self.categorical_cols:
+            if col != "NObeyesdad":  # Target tidak diubah
+                self.label_encoders[col] = LabelEncoder()
+                self.data_processed[col] = self.label_encoders[col].fit_transform(self.data_original[col])
+        
+        # Normalisasi untuk data numerik
+        self.data_processed[self.numerical_cols] = self.scaler.fit_transform(self.data_original[self.numerical_cols])
 
     def transform_user_input(self, user_df):
-        """ Hanya transformasi untuk keperluan prediksi """
+        """Mengubah input user ke bentuk yang bisa digunakan untuk prediksi (encoding & normalisasi)"""
+        transformed_df = user_df.copy()
+
+        # Encoding kategori
         for col in self.label_encoders:
-            user_df[col] = self.label_encoders[col].transform(user_df[col])
-        user_df[self.numerical_cols] = self.scaler.transform(user_df[self.numerical_cols])
-        return user_df
+            transformed_df[col] = self.label_encoders[col].transform([user_df[col].values[0]])[0]
+
+        # Normalisasi numerik
+        transformed_df[self.numerical_cols] = self.scaler.transform(user_df[self.numerical_cols])
+        
+        return transformed_df
 
 # Load Trained Model
 class ModelHandler:
@@ -45,7 +57,7 @@ class ModelHandler:
         self.model = joblib.load(model_path)
     
     def predict(self, features):
-        """ Pastikan input berbentuk array 2D """
+        """Pastikan input berbentuk array 2D sebelum dimasukkan ke model"""
         features = features.values.reshape(1, -1)
         prediction_prob = self.model.predict_proba(features)[0]
         predicted_class = self.model.classes_[np.argmax(prediction_prob)]
@@ -59,32 +71,36 @@ class ObesityClassificationApp:
     
     def display_raw_data(self):
         st.subheader("1. Menampilkan Raw Data")
-        st.write(self.data_handler.data.head())
+        st.write(self.data_handler.data_original.head())  # Tampilkan data asli tanpa perubahan
     
     def display_visualization(self):
         st.subheader("2. Data Visualization")
         fig, ax = plt.subplots()
-        sns.scatterplot(data=self.data_handler.data, x="Height", y="Weight", hue="NObeyesdad", palette="Set1")
+        sns.scatterplot(
+            data=self.data_handler.data_original, x="Height", y="Weight", hue="NObeyesdad", palette="Set1"
+        )
         st.pyplot(fig)
     
     def user_input_features(self):
         st.subheader("3 & 4. Input Data Numerik dan Kategorikal")
         features = {}
-        for col in self.data_handler.data.columns:
+
+        for col in self.data_handler.data_original.columns:
             if col != "NObeyesdad":  # Jangan tampilkan kolom target
                 if col in self.data_handler.categorical_cols:
-                    features[col] = st.selectbox(f"{col}", self.data_handler.label_encoders[col].classes_)
+                    features[col] = st.selectbox(f"{col}", self.data_handler.data_original[col].unique())
                 else:
-                    min_val = self.data_handler.data[col].min()
-                    max_val = self.data_handler.data[col].max()
-                    mean_val = self.data_handler.data[col].mean()
+                    min_val = self.data_handler.data_original[col].min()
+                    max_val = self.data_handler.data_original[col].max()
+                    mean_val = self.data_handler.data_original[col].mean()
                     features[col] = st.slider(f"{col}", float(min_val), float(max_val), float(mean_val))
-        
-        # Buat dataframe tanpa transformasi untuk ditampilkan ke user
+
+        # Dataframe user dalam bentuk asli
         user_df_original = pd.DataFrame([features])
 
-        # Transformasi hanya untuk keperluan prediksi
+        # Transformasi untuk prediksi
         user_df_transformed = self.data_handler.transform_user_input(user_df_original.copy())
+
         return user_df_original, user_df_transformed
     
     def display_prediction(self, user_input_original, user_input_transformed):
@@ -108,7 +124,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "ObesityDataSet_raw_and_data_sinthetic.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "trained_model.pkl")
 
-# Pastikan file ada sebelum dijalankan
 if not os.path.exists(DATA_PATH):
     st.error(f"File data tidak ditemukan: {DATA_PATH}")
 elif not os.path.exists(MODEL_PATH):
