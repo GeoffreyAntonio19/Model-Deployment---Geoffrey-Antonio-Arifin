@@ -87,8 +87,12 @@ class ObesityClassificationApp:
         self.display_prediction(user_input)
 
 # Main Program
-DATA_PATH = "data/ObesityDataSet_raw_and_data_sinthetic.csv"
-MODEL_PATH = "models/trained_model.pkl"
+import os
+
+# Pastikan path mengarah ke file yang benar
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "ObesityDataSet_raw_and_data_sinthetic.csv")
+MODEL_PATH = os.path.join(BASE_DIR, "models", "trained_model.pkl")
 
 data_handler = DataHandler(DATA_PATH)
 data_handler.load_data()
