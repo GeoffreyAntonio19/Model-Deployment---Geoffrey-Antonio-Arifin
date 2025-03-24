@@ -160,6 +160,9 @@ else:
     app = ObesityClassificationApp(data_handler, model_handler)
     app.run()
 
+import joblib
 import sklearn
-st.write(f"Scikit-learn Version: {sklearn.__version__}")
-st.write(f"Scikit-learn Model Version: {model.__module__}")
+
+model = joblib.load("trained_model.pkl")
+print(f"Scikit-learn Model Version: {model.__module__}")
+print(f"Installed Scikit-learn Version: {sklearn.__version__}")
