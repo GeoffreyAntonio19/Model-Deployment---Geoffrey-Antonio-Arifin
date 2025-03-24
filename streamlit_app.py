@@ -58,10 +58,20 @@ class ModelHandler:
     
     def predict(self, features):
         """Pastikan input berbentuk array 2D sebelum dimasukkan ke model"""
-        features = features.values.reshape(1, -1)
-        prediction_prob = self.model.predict_proba(features)[0]
-        predicted_class = self.model.classes_[np.argmax(prediction_prob)]
-        return predicted_class, prediction_prob
+        try:
+            # Pastikan tidak ada nilai NaN dalam data yang dikirim ke model
+            features = features.fillna(0)
+
+            # Pastikan input berbentuk numpy array 2D
+            features = features.to_numpy().reshape(1, -1)
+
+            # Prediksi probabilitas kelas
+            prediction_prob = self.model.predict_proba(features)[0]
+            predicted_class = self.model.classes_[np.argmax(prediction_prob)]
+            return predicted_class, prediction_prob
+        except Exception as e:
+            st.error(f"Terjadi error saat melakukan prediksi: {e}")
+            return None, None
 
 # Streamlit App Class
 class ObesityClassificationApp:
