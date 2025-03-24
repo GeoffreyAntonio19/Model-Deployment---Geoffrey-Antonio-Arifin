@@ -14,27 +14,30 @@ class DataHandler:
         self.data = None
         self.label_encoders = {}
         self.scaler = MinMaxScaler()
+        self.categorical_cols = []
+        self.numerical_cols = []
     
     def load_data(self):
         self.data = pd.read_csv(self.file_path)
+        self.categorical_cols = self.data.select_dtypes(include=['object']).columns.tolist()
+        self.numerical_cols = self.data.select_dtypes(include=['int64', 'float64']).columns.tolist()
         return self.data
     
     def preprocess_data(self):
-        """ Preprocessing tanpa mengubah label sebelum prediksi """
-        categorical_cols = self.data.select_dtypes(include=['object']).columns
-        for col in categorical_cols:
-            if col != "NObeyesdad":  # Jangan transform kolom target dulu
+        """ Menyiapkan encoder untuk kolom kategorikal dan scaler untuk numerik """
+        for col in self.categorical_cols:
+            if col != "NObeyesdad":  # Jangan ubah target
                 self.label_encoders[col] = LabelEncoder()
                 self.data[col] = self.label_encoders[col].fit_transform(self.data[col])
         
-        numerical_cols = self.data.select_dtypes(include=['int64', 'float64']).columns
-        self.data[numerical_cols] = self.scaler.fit_transform(self.data[numerical_cols])
-    
+        self.data[self.numerical_cols] = self.scaler.fit_transform(self.data[self.numerical_cols])
+
     def transform_user_input(self, user_df):
-        """ Transformasi input user agar sesuai dengan format model """
+        """ Hanya transformasi untuk keperluan prediksi """
         for col in self.label_encoders:
             user_df[col] = self.label_encoders[col].transform(user_df[col])
-        return self.scaler.transform(user_df)
+        user_df[self.numerical_cols] = self.scaler.transform(user_df[self.numerical_cols])
+        return user_df
 
 # Load Trained Model
 class ModelHandler:
@@ -69,18 +72,24 @@ class ObesityClassificationApp:
         features = {}
         for col in self.data_handler.data.columns:
             if col != "NObeyesdad":  # Jangan tampilkan kolom target
-                if col in self.data_handler.label_encoders:
+                if col in self.data_handler.categorical_cols:
                     features[col] = st.selectbox(f"{col}", self.data_handler.label_encoders[col].classes_)
                 else:
-                    features[col] = st.slider(f"{col}", float(self.data_handler.data[col].min()), float(self.data_handler.data[col].max()), float(self.data_handler.data[col].mean()))
+                    min_val = self.data_handler.data[col].min()
+                    max_val = self.data_handler.data[col].max()
+                    mean_val = self.data_handler.data[col].mean()
+                    features[col] = st.slider(f"{col}", float(min_val), float(max_val), float(mean_val))
         
-        user_df = pd.DataFrame([features])
-        user_df = pd.DataFrame(self.data_handler.transform_user_input(user_df), columns=user_df.columns)
-        return user_df
+        # Buat dataframe tanpa transformasi untuk ditampilkan ke user
+        user_df_original = pd.DataFrame([features])
+
+        # Transformasi hanya untuk keperluan prediksi
+        user_df_transformed = self.data_handler.transform_user_input(user_df_original.copy())
+        return user_df_original, user_df_transformed
     
-    def display_prediction(self, user_input):
+    def display_prediction(self, user_input_original, user_input_transformed):
         st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
-        predicted_class, prediction_prob = self.model_handler.predict(user_input)
+        predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
         prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
         st.write(prob_df)
         st.write(f"### Prediksi Akhir: {predicted_class}")
@@ -89,10 +98,10 @@ class ObesityClassificationApp:
         st.title("Aplikasi Klasifikasi Obesitas dengan Streamlit")
         self.display_raw_data()
         self.display_visualization()
-        user_input = self.user_input_features()
-        st.subheader("5. Data yang Diinputkan User")
-        st.write(user_input)
-        self.display_prediction(user_input)
+        user_input_original, user_input_transformed = self.user_input_features()
+        st.subheader("5. Data yang Diinputkan User (Nilai Asli)")
+        st.write(user_input_original)
+        self.display_prediction(user_input_original, user_input_transformed)
 
 # Main Program
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
