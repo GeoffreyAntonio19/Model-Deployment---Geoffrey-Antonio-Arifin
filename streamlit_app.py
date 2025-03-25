@@ -12,4 +12,4 @@ with st.expander('**Data**'):
   df
 
 with st.expander('**Data Visualization**'):
-  st.scatter_chat(data=df, x='Height', y='Weight', color='NObeyesdad')
+  st.scatter_chart(data=df, x='Height', y='Weight', color='NObeyesdad')
