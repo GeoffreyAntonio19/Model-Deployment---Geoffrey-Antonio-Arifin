@@ -27,3 +27,11 @@ st.markdown(
 )
 
 st.write('**Input Features**')
+gender = st.selectbox('Gender', ('Male', 'Female'))
+family_history = st.selectbox('Family Member History with Overweight', ('Yes', 'No'))
+favc = st.selectbox('FAVC', ('Yes', 'No'))
+caec = st.selectbox('CAEC', ('Sometimes', 'Frequently', 'Always', 'No'))
+smoke = st.selectbox('SMOKE', ('Yes', 'No'))
+scc = st.selectbox('SCC', ('Yes', 'No'))
+calc = st.selectbox('CALC', ('Yes', 'No'))
+mtrans = st.selectbox('MTRANS', ('Yes', 'No'))
