@@ -17,6 +17,14 @@ def load_data():
 
 df = load_data()
 
+# ---- Data Exploration ----
+with st.expander('**Dataset Preview**'):
+    st.write('This is the raw dataset:')
+    st.dataframe(df)
+
+with st.expander('**Data Visualization**'):
+    st.scatter_chart(data=df, x='Height', y='Weight', color='NObeyesdad')
+
 # ---- Data Preprocessing ----
 def preprocess_data(df):
     label_encoders = {}
