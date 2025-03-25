@@ -26,7 +26,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-with st.expander('**Input Features**'):
+with st.container('**Input Features**'):
   st.write('**Categorical Features**')
   gender = st.selectbox('Gender', ('Male', 'Female'))
   family_history = st.selectbox('Family Member History with Overweight', ('Yes', 'No'))
