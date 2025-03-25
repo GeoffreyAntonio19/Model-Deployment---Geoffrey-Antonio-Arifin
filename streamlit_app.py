@@ -123,9 +123,16 @@ class ObesityClassificationApp:
         predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
 
         if predicted_class is not None:
-            prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
-            st.write(prob_df)
             st.write(f"### Prediksi Akhir: {predicted_class}")
+
+            # Jika model mendukung probabilitas, tampilkan tabel
+            if prediction_prob is not None:
+                prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
+                prob_df = prob_df.sort_values(by="Probability", ascending=False)  # Urutkan probabilitas
+                st.write(prob_df)
+            else:
+                st.info("Model tidak mendukung probabilitas klasifikasi.")
+
         else:
             st.error("Prediksi gagal. Pastikan input valid.")
 
