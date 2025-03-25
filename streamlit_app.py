@@ -166,3 +166,6 @@ if hasattr(model, "__getstate__"):
     st.write(f"📌 **Scikit-learn (model):** {sk_version}")
 else:
     st.write("⚠️ Tidak dapat mendeteksi versi Scikit-learn dari model.")
+
+
+st.write(f"Model Attributes: {dir(model)}")
