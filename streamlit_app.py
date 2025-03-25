@@ -26,16 +26,4 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-with st.container():
-    st.subheader('Input Features')  # Menambahkan judul bagian
-    
-    st.write('**Categorical Features**')
-    gender = st.selectbox('Gender', ('Male', 'Female'))
-    family_history = st.selectbox('Family Member History with Overweight', ('Yes', 'No'))
-    favc = st.selectbox('FAVC', ('Yes', 'No'))
-    caec = st.selectbox('CAEC', ('Sometimes', 'Frequently', 'Always', 'No'))
-    smoke = st.selectbox('SMOKE', ('Yes', 'No'))
-    scc = st.selectbox('SCC', ('Yes', 'No'))
-    calc = st.selectbox('CALC', ('Yes', 'No'))
-    mtrans = st.selectbox('MTRANS', ('Yes', 'No'))
-
+st.subheader('Input Features')
