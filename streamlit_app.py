@@ -18,7 +18,7 @@ st.markdown(
     """
     <style>
     .streamlit-expanderContent {
-        max-height: 1000px; /* Sesuaikan tinggi */
+        max-height: 100px; /* Sesuaikan tinggi */
         overflow-y: auto;
     }
     </style>
