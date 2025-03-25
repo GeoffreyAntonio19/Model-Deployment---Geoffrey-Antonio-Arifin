@@ -1,3 +1,4 @@
+streamlit run streamlit_app.py --clear-cache
 import streamlit as st
 import numpy as np
 import pandas as pd
