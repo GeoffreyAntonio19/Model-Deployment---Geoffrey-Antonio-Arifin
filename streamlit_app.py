@@ -70,7 +70,7 @@ class ModelHandler:
                 predicted_class = self.model.predict(features)[0]
             return predicted_class, prediction_prob
         except AttributeError as e:
-            st.error(f"Terjadi error saat melakukan prediksi. Pastikan model kompatibel dengan versi Scikit-learn terbaru: {e}")
+            st.error(f"Terjadi error saat melakukan prediksi: {e}. Pastikan model kompatibel dengan versi terbaru Scikit-learn.")
             return None, None
 
 # Streamlit App Class
@@ -117,7 +117,7 @@ class ObesityClassificationApp:
             else:
                 st.info("Model tidak mendukung probabilitas klasifikasi.")
         else:
-            st.error("Prediksi gagal. Pastikan input valid.")
+            st.error("Prediksi gagal. Pastikan input valid dan model kompatibel.")
 
     def run(self):
         st.title("Aplikasi Klasifikasi Obesitas dengan Streamlit")
