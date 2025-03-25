@@ -1,6 +1,6 @@
-# 📦 Streamlit App Starter Kit 
+# Obesity Classification Prediction Machine Learning Project
 ```
-Obesity Class Classification
+Obesity Classification using Machine Learning
 ```
 
 Description of the app ...
