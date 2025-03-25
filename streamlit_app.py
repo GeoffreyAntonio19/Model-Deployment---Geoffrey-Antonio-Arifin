@@ -14,18 +14,6 @@ with st.expander('**Data**'):
 with st.expander('**Data Visualization**'):
   st.scatter_chart(data=df, x='Height', y='Weight', color='NObeyesdad')
 
-st.markdown(
-    """
-    <style>
-    .streamlit-expanderContent {
-        max-height: 100px; /* Sesuaikan tinggi */
-        overflow-y: auto;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 st.write('**Input Features**')
 gender = st.selectbox('Gender', ('Male', 'Female'))
 family_history = st.selectbox('Family Member History with Overweight', ('Yes', 'No'))
