@@ -9,25 +9,6 @@ from sklearn.tree import DecisionTreeClassifier
 import os
 import sklearn
 
-from sklearn.tree import DecisionTreeClassifier
-import pandas as pd
-import joblib
-
-# Load ulang dataset
-data = pd.read_csv("ObesityDataSet_raw_and_data_sinthetic.csv")
-
-# Preprocessing
-X = data.drop(columns=["NObeyesdad"])
-y = data["NObeyesdad"]
-
-# Latih ulang model
-model = DecisionTreeClassifier()
-model.fit(X, y)
-
-# Simpan model ulang dengan versi terbaru
-joblib.dump(model, "trained_model.pkl")
-st.write("Model berhasil disimpan ulang!")
-
 # Cek versi Scikit-learn
 def check_sklearn_version():
     return sklearn.__version__
