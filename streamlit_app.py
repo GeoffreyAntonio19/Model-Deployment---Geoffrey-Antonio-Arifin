@@ -58,7 +58,7 @@ class DataHandler:
 # Load Trained Model
 class ModelHandler:
     def __init__(self, model_path):
-        self.model = joblib.load(model_path, fix_imports=True)
+        self.model = joblib.load(model_path)
     
     def predict(self, features):
         """Melakukan prediksi dengan memastikan format input valid"""
