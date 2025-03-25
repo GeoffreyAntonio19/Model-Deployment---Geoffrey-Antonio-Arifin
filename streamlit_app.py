@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import os
-from sklearn.utils import _IS_OLD_JOBLIB
 
 # Load Dataset
 class DataHandler:
@@ -51,10 +50,7 @@ class ModelHandler:
     
     def load_model(self, model_path):
         try:
-            if _IS_OLD_JOBLIB:
-                return joblib.load(model_path, mmap_mode='r')
-            else:
-                return joblib.load(model_path)
+            return joblib.load(model_path)
         except Exception as e:
             st.error(f"Gagal memuat model: {e}")
             return None
