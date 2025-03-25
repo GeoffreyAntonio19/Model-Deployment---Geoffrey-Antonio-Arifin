@@ -78,14 +78,12 @@ st.subheader("User Input Data")
 user_data_original = user_data.copy() # Simpan data asli sebelum encoding
 st.dataframe(user_data_original, use_container_width=True)
 
-# ---- Encode User Input (One-by-One Handling) ----
+# ---- Encode User Input ----
+user_data_encoded = user_data.copy()
 for col in label_encoders:
-    if col in user_data.columns:
+    if col in user_data_encoded.columns:
         le = label_encoders[col]
-        if user_data[col][0] not in le.classes_:
-            user_data[col] = le.transform([le.classes_[0]])  # Gunakan default (kelas pertama)
-        else:
-            user_data[col] = le.transform(user_data[col])
+        user_data_encoded[col] = le.transform(user_data_encoded[col])
 
 # ---- Make Prediction ----
 if st.button("Predict Obesity Class"):
@@ -97,9 +95,10 @@ if st.button("Predict Obesity Class"):
     # Ambil nama kelas dari encoder
     class_names = label_encoders["NObeyesdad"].classes_
 
-    # Buat dataframe probabilitas
+    # Buat dataframe probabilitas dengan nama kelas sebagai header
     df_proba = pd.DataFrame(prediction_proba, columns=class_names)
 
+    # Tampilkan hasil prediksi dan tabel probabilitas
     st.subheader("Obesity Prediction")
     st.dataframe(df_proba.style.format("{:.4f}"), use_container_width=True)
 
