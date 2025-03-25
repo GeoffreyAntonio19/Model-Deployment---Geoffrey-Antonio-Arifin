@@ -26,4 +26,4 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.subheader('Input Features')
+st.write('**Input Features**')
