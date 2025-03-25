@@ -69,8 +69,8 @@ class ModelHandler:
                 prediction_prob = None
                 predicted_class = self.model.predict(features)[0]
             return predicted_class, prediction_prob
-        except Exception as e:
-            st.error(f"Terjadi error saat melakukan prediksi: {e}")
+        except AttributeError as e:
+            st.error(f"Terjadi error saat melakukan prediksi. Pastikan model kompatibel dengan versi Scikit-learn terbaru: {e}")
             return None, None
 
 # Streamlit App Class
@@ -145,11 +145,3 @@ else:
     model_handler = ModelHandler(MODEL_PATH)
     app = ObesityClassificationApp(data_handler, model_handler)
     app.run()
-
-# Periksa versi Scikit-learn dan model
-try:
-    model = joblib.load(MODEL_PATH)
-    print(f"Scikit-learn Model Version: {model.__module__}")
-    print(f"Installed Scikit-learn Version: {sklearn.__version__}")
-except Exception as e:
-    print(f"Gagal memuat model untuk pengecekan versi: {e}")
