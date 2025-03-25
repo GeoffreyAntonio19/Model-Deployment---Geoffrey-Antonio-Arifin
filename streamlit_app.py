@@ -6,70 +6,65 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import os
+from sklearn.utils import _IS_OLD_JOBLIB
 
 # Load Dataset
 class DataHandler:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.data_original = None  # Data asli tanpa encoding/normalisasi
-        self.data_processed = None  # Data setelah encoding & normalisasi
+        self.data_original = None
+        self.data_processed = None
         self.label_encoders = {}
         self.scaler = MinMaxScaler()
         self.categorical_cols = []
         self.numerical_cols = []
     
     def load_data(self):
-        """Memuat data asli tanpa perubahan"""
         self.data_original = pd.read_csv(self.file_path)
         self.categorical_cols = self.data_original.select_dtypes(include=['object']).columns.tolist()
         self.numerical_cols = self.data_original.select_dtypes(include=['int64', 'float64']).columns.tolist()
         return self.data_original
     
     def preprocess_data(self):
-        """Melakukan encoding kategori & normalisasi numerik untuk model"""
         self.data_processed = self.data_original.copy()
-        
-        # Encoding untuk data kategorikal (selain target)
         for col in self.categorical_cols:
-            if col != "NObeyesdad":  # Target tidak diubah
+            if col != "NObeyesdad":
                 self.label_encoders[col] = LabelEncoder()
                 self.data_processed[col] = self.label_encoders[col].fit_transform(self.data_original[col])
-        
-        # Normalisasi untuk data numerik
         self.data_processed[self.numerical_cols] = self.scaler.fit_transform(self.data_original[self.numerical_cols])
 
     def transform_user_input(self, user_df):
-        """Mengubah input user ke format yang bisa digunakan untuk prediksi"""
         transformed_df = user_df.copy()
-
-        # Encoding kategori dengan penanganan nilai tak dikenal
         for col in self.label_encoders:
             try:
                 transformed_df[col] = self.label_encoders[col].transform([user_df[col].values[0]])[0]
             except ValueError:
                 st.warning(f"Nilai '{user_df[col].values[0]}' di {col} tidak dikenal. Gunakan kategori lain.")
                 return None
-
-        # Normalisasi numerik
         transformed_df[self.numerical_cols] = self.scaler.transform(user_df[self.numerical_cols])
-        
         return transformed_df
 
 # Load Trained Model
 class ModelHandler:
     def __init__(self, model_path):
-        self.model = joblib.load(model_path)
+        self.model = self.load_model(model_path)
+    
+    def load_model(self, model_path):
+        try:
+            if _IS_OLD_JOBLIB:
+                return joblib.load(model_path, mmap_mode='r')
+            else:
+                return joblib.load(model_path)
+        except Exception as e:
+            st.error(f"Gagal memuat model: {e}")
+            return None
     
     def predict(self, features):
-        """Melakukan prediksi dengan memastikan format input valid"""
+        if features is None or self.model is None:
+            return None, None
         try:
-            if features is None:
-                return None, None  # Tidak bisa prediksi jika transformasi gagal
-
-            features = features.fillna(0)  # Isi NaN dengan 0
-            features = features.to_numpy().reshape(1, -1)  # Pastikan array 2D
-
-            # Prediksi
+            features = features.fillna(0)
+            features = features.to_numpy().reshape(1, -1)
             prediction_prob = self.model.predict_proba(features)[0]
             predicted_class = self.model.classes_[np.argmax(prediction_prob)]
             return predicted_class, prediction_prob
@@ -85,22 +80,19 @@ class ObesityClassificationApp:
     
     def display_raw_data(self):
         st.subheader("1. Menampilkan Raw Data")
-        st.write(self.data_handler.data_original.head())  # Tampilkan data asli tanpa perubahan
+        st.write(self.data_handler.data_original.head())
     
     def display_visualization(self):
         st.subheader("2. Data Visualization")
         fig, ax = plt.subplots()
-        sns.scatterplot(
-            data=self.data_handler.data_original, x="Height", y="Weight", hue="NObeyesdad", palette="Set1"
-        )
+        sns.scatterplot(data=self.data_handler.data_original, x="Height", y="Weight", hue="NObeyesdad", palette="Set1")
         st.pyplot(fig)
     
     def user_input_features(self):
         st.subheader("3 & 4. Input Data Numerik dan Kategorikal")
         features = {}
-
         for col in self.data_handler.data_original.columns:
-            if col != "NObeyesdad":  # Jangan tampilkan kolom target
+            if col != "NObeyesdad":
                 if col in self.data_handler.categorical_cols:
                     features[col] = st.selectbox(f"{col}", self.data_handler.data_original[col].unique())
                 else:
@@ -108,31 +100,21 @@ class ObesityClassificationApp:
                     max_val = self.data_handler.data_original[col].max()
                     mean_val = self.data_handler.data_original[col].mean()
                     features[col] = st.slider(f"{col}", float(min_val), float(max_val), float(mean_val))
-
-        # Dataframe user dalam bentuk asli
         user_df_original = pd.DataFrame([features])
-
-        # Transformasi untuk prediksi
         user_df_transformed = self.data_handler.transform_user_input(user_df_original.copy())
-
         return user_df_original, user_df_transformed
     
     def display_prediction(self, user_input_original, user_input_transformed):
         st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
-
         predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
-
         if predicted_class is not None:
             st.write(f"### Prediksi Akhir: {predicted_class}")
-
-            # Jika model mendukung probabilitas, tampilkan tabel
             if prediction_prob is not None:
                 prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
-                prob_df = prob_df.sort_values(by="Probability", ascending=False)  # Urutkan probabilitas
+                prob_df = prob_df.sort_values(by="Probability", ascending=False)
                 st.write(prob_df)
             else:
                 st.info("Model tidak mendukung probabilitas klasifikasi.")
-
         else:
             st.error("Prediksi gagal. Pastikan input valid.")
 
@@ -141,10 +123,8 @@ class ObesityClassificationApp:
         self.display_raw_data()
         self.display_visualization()
         user_input_original, user_input_transformed = self.user_input_features()
-
         st.subheader("5. Data yang Diinputkan User (Nilai Asli)")
         st.write(user_input_original)
-
         if user_input_transformed is not None:
             self.display_prediction(user_input_original, user_input_transformed)
 
@@ -161,15 +141,12 @@ else:
     data_handler = DataHandler(DATA_PATH)
     data_handler.load_data()
     data_handler.preprocess_data()
-
     model_handler = ModelHandler(MODEL_PATH)
-
     app = ObesityClassificationApp(data_handler, model_handler)
     app.run()
 
-import joblib
-import sklearn
-
-model = joblib.load("trained_model.pkl")
+# Periksa versi Scikit-learn dan model
+model = joblib.load(MODEL_PATH)
 print(f"Scikit-learn Model Version: {model.__module__}")
+import sklearn
 print(f"Installed Scikit-learn Version: {sklearn.__version__}")
