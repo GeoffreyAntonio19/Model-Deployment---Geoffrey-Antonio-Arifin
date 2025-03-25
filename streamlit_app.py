@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import os
+import sklearn
 
 # Load Dataset
 class DataHandler:
@@ -64,6 +65,9 @@ class ModelHandler:
             prediction_prob = self.model.predict_proba(features)[0]
             predicted_class = self.model.classes_[np.argmax(prediction_prob)]
             return predicted_class, prediction_prob
+        except AttributeError as e:
+            st.error("Error: Model yang digunakan mungkin tidak kompatibel dengan versi Scikit-learn saat ini.")
+            return None, None
         except Exception as e:
             st.error(f"Terjadi error saat melakukan prediksi: {e}")
             return None, None
@@ -144,5 +148,4 @@ else:
 # Periksa versi Scikit-learn dan model
 model = joblib.load(MODEL_PATH)
 print(f"Scikit-learn Model Version: {model.__module__}")
-import sklearn
 print(f"Installed Scikit-learn Version: {sklearn.__version__}")
