@@ -14,6 +14,18 @@ with st.expander('**Data**'):
 with st.expander('**Data Visualization**'):
   st.scatter_chart(data=df, x='Height', y='Weight', color='NObeyesdad')
 
+st.markdown(
+    """
+    <style>
+    .streamlit-expanderContent {
+        max-height: 400px; /* Sesuaikan tinggi */
+        overflow-y: auto;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 with st.expander('**Input Features**'):
   st.write('**Categorical Features**')
   gender = st.selectbox('Gender', ('Male', 'Female'))
