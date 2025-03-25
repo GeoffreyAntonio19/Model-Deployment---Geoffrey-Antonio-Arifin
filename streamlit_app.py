@@ -17,3 +17,4 @@ with st.expander('**Data Visualization**'):
 with st.expander('**Input Features**'):
   st.write('**Categorical Features**')
   gender = st.selectbox('Gender', ('Male', 'Female'))
+  family_history = st.selectbox('Family Member History with Overweight', ('Yes', 'No'))
