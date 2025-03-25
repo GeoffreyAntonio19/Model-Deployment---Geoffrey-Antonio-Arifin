@@ -78,12 +78,15 @@ st.subheader("User Input Data")
 user_data_original = user_data.copy() # Simpan data asli sebelum encoding
 st.dataframe(user_data_original, use_container_width=True)
 
-# ---- Encode User Input ----
+# ---- Encode User Input (One-by-One Handling) ----
 user_data_encoded = user_data.copy()
 for col in label_encoders:
     if col in user_data_encoded.columns:
         le = label_encoders[col]
-        user_data_encoded[col] = le.transform(user_data_encoded[col])
+        if user_data_encoded[col][0] not in le.classes_:
+            user_data_encoded[col] = le.transform([le.classes_[0]])  # Gunakan default (kelas pertama)
+        else:
+            user_data_encoded[col] = le.transform(user_data_encoded[col])
 
 # ---- Make Prediction ----
 if st.button("Predict Obesity Class"):
