@@ -45,7 +45,7 @@ st.session_state['user_inputs'] = {
     "FCVC": fcvc,
     "NCP": ncp,
     "CAEC": caec,
-    "SMOKE": smoke:
+    "SMOKE": smoke,
     "CH2O": ch2o,
     "SCC": scc,
     "FAF": faf,
