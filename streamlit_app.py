@@ -9,6 +9,13 @@ from sklearn.tree import DecisionTreeClassifier
 import os
 import sklearn
 
+import joblib
+import sklearn
+
+model = joblib.load("trained_model.pkl")
+print(f"Model disimpan dengan Scikit-learn versi: {getattr(model, '_sklearn_version', 'Unknown')}")
+print(f"Versi Scikit-learn saat ini: {sklearn.__version__}")
+
 # Cek versi Scikit-learn
 def check_sklearn_version():
     return sklearn.__version__
