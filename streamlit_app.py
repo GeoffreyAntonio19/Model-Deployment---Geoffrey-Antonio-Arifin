@@ -40,48 +40,47 @@ class DataHandler:
                 self.data_processed[col] = self.label_encoders[col].fit_transform(self.data_original[col])
         self.data_processed[self.numerical_cols] = self.scaler.fit_transform(self.data_original[self.numerical_cols])
 
-    def transform_user_input(self, user_df):
-        transformed_df = user_df.copy()
-        for col in self.label_encoders:
-            try:
-                transformed_df[col] = self.label_encoders[col].transform([user_df[col].values[0]])[0]
-            except ValueError:
-                st.warning(f"Nilai '{user_df[col].values[0]}' di {col} tidak dikenal. Gunakan kategori lain.")
-                return None
-        transformed_df[self.numerical_cols] = self.scaler.transform(user_df[self.numerical_cols])
-        return transformed_df
+# Latih ulang model dan simpan ulang dalam format yang kompatibel
+def retrain_and_save_model(data_handler, model_path):
+    X = data_handler.data_processed.drop(columns=["NObeyesdad"])
+    y = data_handler.data_original["NObeyesdad"]
+    
+    model = DecisionTreeClassifier()
+    model.fit(X, y)
+    
+    model._sklearn_version = check_sklearn_version()  # Simpan versi sklearn dalam model
+    joblib.dump(model, model_path)
+    st.sidebar.success("✅ Model telah dilatih ulang dan disimpan kembali!")
 
 # Load Trained Model
 class ModelHandler:
     def __init__(self, model_path):
-        self.model = self.load_model(model_path)
+        self.model_path = model_path
+        self.model = None
+        self.load_model()
     
-    def load_model(self, model_path):
-        try:
-            model = joblib.load(model_path)
-            model_sklearn_version = getattr(model, '_sklearn_version', 'Unknown')
-            st.sidebar.write(f"Versi Scikit-learn (Model): {model_sklearn_version}")
-            return model
-        except Exception as e:
-            st.error(f"Gagal memuat model: {e}")
-            return None
+    def load_model(self):
+        if not os.path.exists(self.model_path):
+            st.sidebar.warning("⚠️ Model tidak ditemukan, melatih ulang...")
+            retrain_and_save_model(data_handler, self.model_path)
+        
+        self.model = joblib.load(self.model_path)
+        model_sklearn_version = getattr(self.model, '_sklearn_version', 'Unknown')
+        st.sidebar.write(f"📌 Model dimuat dengan versi Scikit-learn: {model_sklearn_version}")
+        
+        # Cek kompatibilitas versi Scikit-learn
+        if model_sklearn_version != check_sklearn_version():
+            st.sidebar.warning("⚠️ Versi Scikit-learn berbeda! Melatih ulang model...")
+            retrain_and_save_model(data_handler, self.model_path)
+            self.model = joblib.load(self.model_path)
     
     def predict(self, features):
         if features is None or self.model is None:
             return None, None
-        try:
-            features = features.fillna(0)
-            features = features.to_numpy().reshape(1, -1)
-            if hasattr(self.model, 'predict_proba'):
-                prediction_prob = self.model.predict_proba(features)[0]
-                predicted_class = self.model.classes_[np.argmax(prediction_prob)]
-            else:
-                prediction_prob = None
-                predicted_class = self.model.predict(features)[0]
-            return predicted_class, prediction_prob
-        except AttributeError as e:
-            st.error(f"Terjadi error saat melakukan prediksi: {e}. Pastikan model kompatibel dengan versi terbaru Scikit-learn.")
-            return None, None
+        
+        features = features.to_numpy().reshape(1, -1)
+        predicted_class = self.model.predict(features)[0]
+        return predicted_class
 
 # Streamlit App Class
 class ObesityClassificationApp:
@@ -101,71 +100,37 @@ class ObesityClassificationApp:
     
     def user_input_features(self):
         st.subheader("3 & 4. Input Data Numerik dan Kategorikal")
-        features = {}
-        for col in self.data_handler.data_original.columns:
-            if col != "NObeyesdad":
-                if col in self.data_handler.categorical_cols:
-                    features[col] = st.selectbox(f"{col}", self.data_handler.data_original[col].unique())
-                else:
-                    min_val = self.data_handler.data_original[col].min()
-                    max_val = self.data_handler.data_original[col].max()
-                    mean_val = self.data_handler.data_original[col].mean()
-                    features[col] = st.slider(f"{col}", float(min_val), float(max_val), float(mean_val))
-        user_df_original = pd.DataFrame([features])
-        user_df_transformed = self.data_handler.transform_user_input(user_df_original.copy())
-        return user_df_original, user_df_transformed
+        height = st.slider("Height", float(self.data_handler.data_original["Height"].min()), float(self.data_handler.data_original["Height"].max()), float(self.data_handler.data_original["Height"].mean()))
+        weight = st.slider("Weight", float(self.data_handler.data_original["Weight"].min()), float(self.data_handler.data_original["Weight"].max()), float(self.data_handler.data_original["Weight"].mean()))
+        
+        user_df = pd.DataFrame({"Height": [height], "Weight": [weight]})
+        return user_df
     
-    def display_prediction(self, user_input_original, user_input_transformed):
+    def display_prediction(self, user_input):
         st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
-        predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
-        if predicted_class is not None:
-            st.write(f"### Prediksi Akhir: {predicted_class}")
-            if prediction_prob is not None:
-                prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
-                prob_df = prob_df.sort_values(by="Probability", ascending=False)
-                st.write(prob_df)
-            else:
-                st.info("Model tidak mendukung probabilitas klasifikasi.")
+        prediction = self.model_handler.predict(user_input)
+        if prediction is not None:
+            st.write(f"### Prediksi Akhir: {prediction}")
         else:
             st.error("Prediksi gagal. Pastikan input valid dan model kompatibel.")
-
+    
     def run(self):
         st.title("Aplikasi Klasifikasi Obesitas dengan Streamlit")
         self.display_raw_data()
         self.display_visualization()
-        user_input_original, user_input_transformed = self.user_input_features()
-        st.subheader("5. Data yang Diinputkan User (Nilai Asli)")
-        st.write(user_input_original)
-        if user_input_transformed is not None:
-            self.display_prediction(user_input_original, user_input_transformed)
+        user_input = self.user_input_features()
+        st.subheader("5. Data yang Diinputkan User")
+        st.write(user_input)
+        self.display_prediction(user_input)
 
 # Main Program
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "ObesityDataSet_raw_and_data_sinthetic.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "trained_model.pkl")
 
-if not os.path.exists(DATA_PATH):
-    st.error(f"File data tidak ditemukan: {DATA_PATH}")
-elif not os.path.exists(MODEL_PATH):
-    st.error(f"File model tidak ditemukan: {MODEL_PATH}")
-else:
-    data_handler = DataHandler(DATA_PATH)
-    data_handler.load_data()
-    data_handler.preprocess_data()
-    model_handler = ModelHandler(MODEL_PATH)
-    app = ObesityClassificationApp(data_handler, model_handler)
-    app.run()
-
-import joblib
-
-model_path = "trained_model.pkl"  # Sesuaikan dengan path model
-model = joblib.load(model_path)
-
-if hasattr(model, "__getstate__"):
-    sk_version = model.__getstate__().get('_sklearn_version', 'Unknown')
-    st.write(f"📌 **Scikit-learn (model):** {sk_version}")
-else:
-    st.write("⚠️ Tidak dapat mendeteksi versi Scikit-learn dari model.")
-
-
-st.write(f"Model Attributes: {dir(model)}")
+data_handler = DataHandler(DATA_PATH)
+data_handler.load_data()
+data_handler.preprocess_data()
+model_handler = ModelHandler(MODEL_PATH)
+app = ObesityClassificationApp(data_handler, model_handler)
+app.run()
