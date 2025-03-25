@@ -1,6 +1,8 @@
 # Obesity Classification Prediction Machine Learning Project
-```
+
 Obesity Classification using Machine Learning
+```
+
 ```
 
 Description of the app ...
