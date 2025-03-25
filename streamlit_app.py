@@ -8,6 +8,12 @@ from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import os
 import sklearn
 
+# Cek versi Scikit-learn
+def check_sklearn_version():
+    return sklearn.__version__
+
+st.sidebar.write(f"Versi Scikit-learn (Runtime): {check_sklearn_version()}")
+
 # Load Dataset
 class DataHandler:
     def __init__(self, file_path):
@@ -51,7 +57,10 @@ class ModelHandler:
     
     def load_model(self, model_path):
         try:
-            return joblib.load(model_path)
+            model = joblib.load(model_path)
+            model_sklearn_version = getattr(model, '_sklearn_version', 'Unknown')
+            st.sidebar.write(f"Versi Scikit-learn (Model): {model_sklearn_version}")
+            return model
         except Exception as e:
             st.error(f"Gagal memuat model: {e}")
             return None
