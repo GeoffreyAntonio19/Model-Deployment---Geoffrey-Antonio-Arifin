@@ -31,3 +31,28 @@ faf = st.slider('FAF', min_value = 0.00, max_value = 3.00, value = 1.50)
 tue = st.slider('TUE', min_value = 0.00, max_value = 2.00, value = 1.00)
 calc = st.selectbox('CALC', ('Yes', 'No'))
 mtrans = st.selectbox('MTRANS', ('Public Transportation', 'Walking', 'Automobile', 'Motorbike', 'Bike'))
+
+if 'user_inputs' not in st.session_state:
+    st.session_state['user_inputs'] = {}
+
+st.session_state['user_inputs'] = {
+    "Gender": gender,
+    "Age": age,
+    "Height": height,
+    "Weight": weight,
+    "Family History with Overweight": family_history,
+    "FAVC": favc,
+    "FCVC": fcvc,
+    "NCP": ncp,
+    "CAEC": caec,
+    "SMOKE": smoke:
+    "CH2O": ch2o,
+    "SCC": scc,
+    "FAF": faf,
+    "TUE": tue,
+    "CALC": calc,
+    "MTRANS": mtrans
+}
+
+st.subheader("Data Input User:")
+st.write(st.session_state['user_inputs'])
