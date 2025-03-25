@@ -16,4 +16,4 @@ with st.expander('**Data Visualization**'):
 
 with st.expander('**Input Features**'):
   st.header('Input Categorical Features')
-  gender = st.selectbox('Gender', ('Male', 'Female'))
+  gender = st.selectbox('1. Gender', ('Male', 'Female'))
