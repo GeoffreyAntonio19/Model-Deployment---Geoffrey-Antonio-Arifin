@@ -1,4 +1,4 @@
-streamlit run streamlit_app.py --clear-cache
+taskkill /IM streamlit.exe /F
 import streamlit as st
 import numpy as np
 import pandas as pd
