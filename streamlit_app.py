@@ -72,9 +72,9 @@ class ModelHandler:
         try:
             features = features.fillna(0)
             features = features.to_numpy().reshape(1, -1)
-            prediction = self.model.predict(features)[0]
-            prediction_proba = self.model.predict_proba(features)[0]
-            return prediction, prediction_proba
+            prediction = self.model.predict(features)
+            prediction_proba = self.model.predict_proba(features)
+            return prediction[0], prediction_proba[0]
         except AttributeError as e:
             st.error(f"Terjadi error saat melakukan prediksi: {e}. Pastikan model kompatibel dengan versi terbaru Scikit-learn.")
             return None, None
@@ -100,15 +100,17 @@ class ObesityClassificationApp:
 
     def run(self):
         st.title("Aplikasi Klasifikasi Obesitas dengan Streamlit")
-        user_input_original, user_input_transformed = self.data_handler.transform_user_input(pd.DataFrame([{
+        user_input = {
             "Gender": st.selectbox("Gender", ['Male', 'Female']),
             "Age": st.slider("Age", 10, 80, 25),
             "Height": st.slider("Height", 1.2, 2.2, 1.7),
             "Weight": st.slider("Weight", 30, 200, 70),
             "family_history_with_overweight": st.selectbox("Family History", ['yes', 'no'])
-        }]))
+        }
+        user_input_df = pd.DataFrame([user_input])
+        user_input_transformed = self.data_handler.transform_user_input(user_input_df)
         if user_input_transformed is not None:
-            self.display_prediction(user_input_original, user_input_transformed)
+            self.display_prediction(user_input_df, user_input_transformed)
 
 # Main Program
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
