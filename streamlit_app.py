@@ -62,12 +62,13 @@ class ModelHandler:
         try:
             features = features.fillna(0)
             features = features.to_numpy().reshape(1, -1)
-            prediction_prob = self.model.predict_proba(features)[0]
-            predicted_class = self.model.classes_[np.argmax(prediction_prob)]
+            if hasattr(self.model, 'predict_proba'):
+                prediction_prob = self.model.predict_proba(features)[0]
+                predicted_class = self.model.classes_[np.argmax(prediction_prob)]
+            else:
+                prediction_prob = None
+                predicted_class = self.model.predict(features)[0]
             return predicted_class, prediction_prob
-        except AttributeError as e:
-            st.error("Error: Model yang digunakan mungkin tidak kompatibel dengan versi Scikit-learn saat ini.")
-            return None, None
         except Exception as e:
             st.error(f"Terjadi error saat melakukan prediksi: {e}")
             return None, None
@@ -146,6 +147,9 @@ else:
     app.run()
 
 # Periksa versi Scikit-learn dan model
-model = joblib.load(MODEL_PATH)
-print(f"Scikit-learn Model Version: {model.__module__}")
-print(f"Installed Scikit-learn Version: {sklearn.__version__}")
+try:
+    model = joblib.load(MODEL_PATH)
+    print(f"Scikit-learn Model Version: {model.__module__}")
+    print(f"Installed Scikit-learn Version: {sklearn.__version__}")
+except Exception as e:
+    print(f"Gagal memuat model untuk pengecekan versi: {e}")
