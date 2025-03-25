@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.tree import DecisionTreeClassifier
 import os
 import sklearn
 
