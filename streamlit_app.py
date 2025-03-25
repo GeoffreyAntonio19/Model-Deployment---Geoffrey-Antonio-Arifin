@@ -11,5 +11,5 @@ with st.expander('**Data**'):
   df = pd.read_csv('ObesityDataSet_raw_and_data_sinthetic.csv')
   df
 
-with st.expander("**Data Visualization**'):
+with st.expander('**Data Visualization**'):
   st.scatter_chat(data=df, x='Height', y='Weight', color='NObeyesdad')
