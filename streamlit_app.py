@@ -89,6 +89,18 @@ for col in label_encoders:
 
 # ---- Make Prediction ----
 if st.button("Predict Obesity Class"):
-    prediction = model.predict(user_data)
+    # Prediksi kelas dan probabilitas
+    prediction_proba = model.predict_proba(user_data_encoded)
+    prediction = model.predict(user_data_encoded)
     predicted_class = label_encoders["NObeyesdad"].inverse_transform(prediction)[0]
+
+    # Ambil nama kelas dari encoder
+    class_names = label_encoders["NObeyesdad"].classes_
+
+    # Buat dataframe probabilitas
+    df_proba = pd.DataFrame(prediction_proba, columns=class_names)
+
+    st.subheader("Obesity Prediction")
+    st.dataframe(df_proba.style.format("{:.4f}"), use_container_width=True)
+
     st.success(f"Predicted Obesity Class: **{predicted_class}**")
