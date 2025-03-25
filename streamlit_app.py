@@ -72,9 +72,9 @@ class ModelHandler:
         try:
             features = features.fillna(0)
             features = features.to_numpy().reshape(1, -1)
-            prediction = self.model.predict(features)
-            prediction_proba = self.model.predict_proba(features)
-            return prediction[0], prediction_proba[0]
+            prediction = self.model.predict(features)[0]
+            prediction_proba = self.model.predict_proba(features)[0]
+            return prediction, prediction_proba
         except AttributeError as e:
             st.error(f"Terjadi error saat melakukan prediksi: {e}. Pastikan model kompatibel dengan versi terbaru Scikit-learn.")
             return None, None
@@ -85,41 +85,69 @@ class ObesityClassificationApp:
         self.data_handler = data_handler
         self.model_handler = model_handler
     
+    def display_raw_data(self):
+        st.subheader("1. Menampilkan Raw Data")
+        st.write(self.data_handler.data_original.head())
+    
+    def display_visualization(self):
+        st.subheader("2. Data Visualization")
+        fig, ax = plt.subplots()
+        sns.scatterplot(data=self.data_handler.data_original, x="Height", y="Weight", hue="NObeyesdad", palette="Set1")
+        st.pyplot(fig)
+    
+    def user_input_features(self):
+        st.subheader("3 & 4. Input Data Numerik dan Kategorikal")
+        features = {}
+        for col in self.data_handler.data_original.columns:
+            if col != "NObeyesdad":
+                if col in self.data_handler.categorical_cols:
+                    features[col] = st.selectbox(f"{col}", self.data_handler.data_original[col].unique())
+                else:
+                    min_val = self.data_handler.data_original[col].min()
+                    max_val = self.data_handler.data_original[col].max()
+                    mean_val = self.data_handler.data_original[col].mean()
+                    features[col] = st.slider(f"{col}", float(min_val), float(max_val), float(mean_val))
+        user_df_original = pd.DataFrame([features])
+        user_df_transformed = self.data_handler.transform_user_input(user_df_original.copy())
+        return user_df_original, user_df_transformed
+    
     def display_prediction(self, user_input_original, user_input_transformed):
-        st.subheader("Prediksi dan Probabilitas Klasifikasi")
+        st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
         predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
         if predicted_class is not None:
             obesity_categories = np.array(['Normal_Weight', 'Overweight_Level_I', 'Overweight_Level_II',
                                            'Obesity_Type_I', 'Insufficient_Weight', 'Obesity_Type_II',
                                            'Obesity_Type_III'])
-            st.success(f"Prediksi: {obesity_categories[predicted_class]}")
-            prob_df = pd.DataFrame(prediction_prob.reshape(1, -1), columns=obesity_categories)
-            st.dataframe(prob_df.style.format('{:.4f}'))
+            st.write(f"### Prediksi Akhir: {obesity_categories[predicted_class]}")
+            prob_df = pd.DataFrame(prediction_prob, index=obesity_categories, columns=['Probability'])
+            prob_df = prob_df.sort_values(by="Probability", ascending=False)
+            st.dataframe(prob_df.style.format({'Probability': '{:.4f}'}))
         else:
             st.error("Prediksi gagal. Pastikan input valid dan model kompatibel.")
 
     def run(self):
         st.title("Aplikasi Klasifikasi Obesitas dengan Streamlit")
-        user_input = {
-            "Gender": st.selectbox("Gender", ['Male', 'Female']),
-            "Age": st.slider("Age", 10, 80, 25),
-            "Height": st.slider("Height", 1.2, 2.2, 1.7),
-            "Weight": st.slider("Weight", 30, 200, 70),
-            "family_history_with_overweight": st.selectbox("Family History", ['yes', 'no'])
-        }
-        user_input_df = pd.DataFrame([user_input])
-        user_input_transformed = self.data_handler.transform_user_input(user_input_df)
+        self.display_raw_data()
+        self.display_visualization()
+        user_input_original, user_input_transformed = self.user_input_features()
+        st.subheader("5. Data yang Diinputkan User (Nilai Asli)")
+        st.write(user_input_original)
         if user_input_transformed is not None:
-            self.display_prediction(user_input_df, user_input_transformed)
+            self.display_prediction(user_input_original, user_input_transformed)
 
 # Main Program
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "ObesityDataSet_raw_and_data_sinthetic.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "trained_model.pkl")
 
-data_handler = DataHandler(DATA_PATH)
-data_handler.load_data()
-data_handler.preprocess_data()
-model_handler = ModelHandler(MODEL_PATH)
-app = ObesityClassificationApp(data_handler, model_handler)
-app.run()
+if not os.path.exists(DATA_PATH):
+    st.error(f"File data tidak ditemukan: {DATA_PATH}")
+elif not os.path.exists(MODEL_PATH):
+    st.error(f"File model tidak ditemukan: {MODEL_PATH}")
+else:
+    data_handler = DataHandler(DATA_PATH)
+    data_handler.load_data()
+    data_handler.preprocess_data()
+    model_handler = ModelHandler(MODEL_PATH)
+    app = ObesityClassificationApp(data_handler, model_handler)
+    app.run()
