@@ -12,7 +12,7 @@ import sklearn
 def check_sklearn_version():
     return sklearn.__version__
 
-st.sidebar.write(f"Versi Scikit-learn (Runtime): {check_sklearn_version()}")
+st.write(f"Versi Scikit-learn (Runtime): {check_sklearn_version()}")
 
 # Load Dataset
 class DataHandler:
@@ -162,6 +162,6 @@ model = joblib.load(model_path)
 
 if hasattr(model, "__getstate__"):
     sk_version = model.__getstate__().get('_sklearn_version', 'Unknown')
-    st.sidebar.write(f"📌 **Scikit-learn (model):** {sk_version}")
+    st.write(f"📌 **Scikit-learn (model):** {sk_version}")
 else:
-    st.sidebar.write("⚠️ Tidak dapat mendeteksi versi Scikit-learn dari model.")
+    st.write("⚠️ Tidak dapat mendeteksi versi Scikit-learn dari model.")
