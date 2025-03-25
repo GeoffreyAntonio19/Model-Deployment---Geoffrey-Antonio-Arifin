@@ -75,7 +75,7 @@ user_data = pd.DataFrame({
 
 # ---- Display User Input (Original Data) ----
 st.subheader("User Input Data")
-user_data_original = user.data.copy() # Simpan data asli sebelum encoding
+user_data_original = user_data.copy() # Simpan data asli sebelum encoding
 st.dataframe(user_data_original, use_container_width=True)
 
 # ---- Encode User Input (One-by-One Handling) ----
