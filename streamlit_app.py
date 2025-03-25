@@ -17,6 +17,7 @@ with st.expander('**Data Visualization**'):
 st.write('**Input Features**')
 gender = st.selectbox('Gender', ('Male', 'Female'))
 age = st.slider('Age', min_value = 0, max_value = 70, value = 40)
+height = st.slider('Height', min_value = 1.30, max_value = 2.00, value = 1.65)
 family_history = st.selectbox('Family Member History with Overweight', ('Yes', 'No'))
 favc = st.selectbox('FAVC', ('Yes', 'No'))
 caec = st.selectbox('CAEC', ('Sometimes', 'Frequently', 'Always', 'No'))
