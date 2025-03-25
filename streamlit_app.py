@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 import os
 import sklearn
 
@@ -72,13 +72,9 @@ class ModelHandler:
         try:
             features = features.fillna(0)
             features = features.to_numpy().reshape(1, -1)
-            if hasattr(self.model, 'predict_proba'):
-                prediction_prob = self.model.predict_proba(features)[0]
-                predicted_class = self.model.classes_[np.argmax(prediction_prob)]
-            else:
-                prediction_prob = None
-                predicted_class = self.model.predict(features)[0]
-            return predicted_class, prediction_prob
+            prediction = self.model.predict(features)[0]
+            prediction_proba = self.model.predict_proba(features)[0]
+            return prediction, prediction_proba
         except AttributeError as e:
             st.error(f"Terjadi error saat melakukan prediksi: {e}. Pastikan model kompatibel dengan versi terbaru Scikit-learn.")
             return None, None
@@ -119,13 +115,13 @@ class ObesityClassificationApp:
         st.subheader("6 & 7. Prediksi dan Probabilitas Klasifikasi")
         predicted_class, prediction_prob = self.model_handler.predict(user_input_transformed)
         if predicted_class is not None:
-            st.write(f"### Prediksi Akhir: {predicted_class}")
-            if prediction_prob is not None:
-                prob_df = pd.DataFrame({'Class': self.model_handler.model.classes_, 'Probability': prediction_prob})
-                prob_df = prob_df.sort_values(by="Probability", ascending=False)
-                st.write(prob_df)
-            else:
-                st.info("Model tidak mendukung probabilitas klasifikasi.")
+            obesity_categories = np.array(['Normal_Weight', 'Overweight_Level_I', 'Overweight_Level_II',
+                                           'Obesity_Type_I', 'Insufficient_Weight', 'Obesity_Type_II',
+                                           'Obesity_Type_III'])
+            st.write(f"### Prediksi Akhir: {obesity_categories[predicted_class]}")
+            prob_df = pd.DataFrame(prediction_prob, index=obesity_categories, columns=['Probability'])
+            prob_df = prob_df.sort_values(by="Probability", ascending=False)
+            st.dataframe(prob_df.style.format({'Probability': '{:.4f}'}))
         else:
             st.error("Prediksi gagal. Pastikan input valid dan model kompatibel.")
 
@@ -155,17 +151,3 @@ else:
     model_handler = ModelHandler(MODEL_PATH)
     app = ObesityClassificationApp(data_handler, model_handler)
     app.run()
-
-import joblib
-
-model_path = "trained_model.pkl"  # Sesuaikan dengan path model
-model = joblib.load(model_path)
-
-if hasattr(model, "__getstate__"):
-    sk_version = model.__getstate__().get('_sklearn_version', 'Unknown')
-    st.write(f"📌 **Scikit-learn (model):** {sk_version}")
-else:
-    st.write("⚠️ Tidak dapat mendeteksi versi Scikit-learn dari model.")
-
-
-st.write(f"Model Attributes: {dir(model)}")
