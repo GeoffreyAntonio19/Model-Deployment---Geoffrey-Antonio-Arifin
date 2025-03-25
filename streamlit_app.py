@@ -61,7 +61,7 @@ st.dataframe(user_data, use_container_width=True)
 # **Preprocessing Data**
 def preprocess_data(df):
     label_encoders = {}
-    categorical_columns = ["Gender", "Family_History", "FAVC", "CAEC", "SMOKE", "SCC", "CALC", "MTRANS"]
+    categorical_columns = ["Gender", "family_history_with_overweight", "FAVC", "CAEC", "SMOKE", "SCC", "CALC", "MTRANS"]
     
     for col in categorical_columns:
         le = LabelEncoder()
