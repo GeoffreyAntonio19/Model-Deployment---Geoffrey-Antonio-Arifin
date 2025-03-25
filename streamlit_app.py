@@ -73,6 +73,11 @@ user_data = pd.DataFrame({
     "MTRANS": [st.selectbox("Main Mode of Transportation (MTRANS)", ("Public_Transportation", "Walking", "Automobile", "Motorbike", "Bike"))]
 })
 
+# ---- Display User Input (Original Data) ----
+st.subheader("User Input Data")
+user_data_original = user.data.copy() # Simpan data asli sebelum encoding
+st.dataframe(user_data_original, use_container_width=True)
+
 # ---- Encode User Input (One-by-One Handling) ----
 for col in label_encoders:
     if col in user_data.columns:
@@ -81,10 +86,6 @@ for col in label_encoders:
             user_data[col] = le.transform([le.classes_[0]])  # Gunakan default (kelas pertama)
         else:
             user_data[col] = le.transform(user_data[col])
-
-# ---- Display User Input ----
-st.subheader("User Input Data")
-st.dataframe(user_data, use_container_width=True)
 
 # ---- Make Prediction ----
 if st.button("Predict Obesity Class"):
