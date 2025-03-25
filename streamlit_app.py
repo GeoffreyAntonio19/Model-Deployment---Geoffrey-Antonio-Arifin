@@ -13,3 +13,7 @@ with st.expander('**Data**'):
 
 with st.expander('**Data Visualization**'):
   st.scatter_chart(data=df, x='Height', y='Weight', color='NObeyesdad')
+
+with st.expander('**Input Features**'):
+  st.header('Input Categorical Features')
+  gender = st.selectbox('Gender', ('Male', 'Female'))
