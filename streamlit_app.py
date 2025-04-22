@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 
@@ -49,7 +49,7 @@ y = df["NObeyesdad"]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = XGBClassifier(use_label_encoder=False, eval_metric='mlogloss', random_state=42)
 model.fit(X_train, y_train)
 
 # ---- User Input Features ----
@@ -75,34 +75,28 @@ user_data = pd.DataFrame({
 
 # ---- Display User Input (Original Data) ----
 st.subheader("User Input Data")
-user_data_original = user_data.copy() # Simpan data asli sebelum encoding
+user_data_original = user_data.copy()
 st.dataframe(user_data_original, use_container_width=True)
 
-# ---- Encode User Input (One-by-One Handling) ----
+# ---- Encode User Input ----
 user_data_encoded = user_data.copy()
 for col in label_encoders:
     if col in user_data_encoded.columns:
         le = label_encoders[col]
         if user_data_encoded[col][0] not in le.classes_:
-            user_data_encoded[col] = le.transform([le.classes_[0]])  # Gunakan default (kelas pertama)
+            user_data_encoded[col] = le.transform([le.classes_[0]])  # default
         else:
             user_data_encoded[col] = le.transform(user_data_encoded[col])
 
 # ---- Make Prediction ----
 if st.button("Predict Obesity Class"):
-    # Prediksi kelas dan probabilitas
     prediction_proba = model.predict_proba(user_data_encoded)
     prediction = model.predict(user_data_encoded)
     predicted_class = label_encoders["NObeyesdad"].inverse_transform(prediction)[0]
 
-    # Ambil nama kelas dari encoder
     class_names = label_encoders["NObeyesdad"].classes_
-
-    # Buat dataframe probabilitas dengan nama kelas sebagai header
     df_proba = pd.DataFrame(prediction_proba, columns=class_names)
 
-    # Tampilkan hasil prediksi dan tabel probabilitas
     st.subheader("Obesity Prediction")
     st.dataframe(df_proba.style.format("{:.4f}"), use_container_width=True)
-
     st.success(f"Predicted Obesity Class: **{predicted_class}**")
